@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.annotation.ColorInt;
+import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.widget.CardView;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -21,13 +22,25 @@ public class FloatingTextButton extends FrameLayout {
     private CardView container;
     private ImageView leftIconView;
     private ImageView rightIconView;
+    private ImageView topIconView;
+    private ImageView bottomIconView;
     private TextView titleView;
 
     private String title;
     private int titleColor;
+    private int selectedTitleColor;
     private Drawable leftIcon;
     private Drawable rightIcon;
-    private int background;
+    private Drawable topIcon;
+    private Drawable bottomIcon;
+    private int backgroundColor;
+    private int selectedBackgroundColor;
+    private int selectedImageColor;
+
+    Integer minHeight;
+    Integer minWidth;
+
+    boolean isSelected = false;
 
     public FloatingTextButton(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -48,6 +61,34 @@ public class FloatingTextButton extends FrameLayout {
         titleView.setText(newTitle);
     }
 
+    public boolean isSelected()
+    {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected)
+    {
+        if(isSelected != selected) {
+            isSelected = selected;
+            setSelectedTitleColor(selected ? selectedTitleColor : titleColor);
+            setSelectedBackgroundColor(selected ? selectedBackgroundColor : backgroundColor);
+            setSelectedIconColor(topIconView, selected ? selectedImageColor : null);
+            setSelectedIconColor(leftIconView, selected ? selectedImageColor : null);
+            setSelectedIconColor(bottomIconView, selected ? selectedImageColor : null);
+            setSelectedIconColor(rightIconView, selected ? selectedImageColor : null);
+        }
+    }
+
+    private void setSelectedIconColor(ImageView icon,Integer color)
+    {
+        if(icon != null) {
+            if(color != null)
+                icon.setColorFilter(color, android.graphics.PorterDuff.Mode.SRC_ATOP);
+            else
+                icon.clearColorFilter();
+        }
+    }
+
     public String getTitle() {
         return title;
     }
@@ -57,17 +98,26 @@ public class FloatingTextButton extends FrameLayout {
         titleView.setTextColor(color);
     }
 
+    private void setSelectedTitleColor(@ColorInt int color) {
+        titleView.setTextColor(color);
+    }
+
     public @ColorInt int getTitleColor() {
         return titleColor;
     }
 
     public void setBackgroundColor(@ColorInt int color) {
-        background = color;
+        backgroundColor = color;
         container.setCardBackgroundColor(color);
     }
 
+    public void setSelectedBackgroundColor(@ColorInt int color) {
+        container.setCardBackgroundColor(color);
+    }
+
+
     public @ColorInt int getBackgroundColor() {
-        return background;
+        return backgroundColor;
     }
 
     public void setLeftIconDrawable(Drawable drawable) {
@@ -80,6 +130,27 @@ public class FloatingTextButton extends FrameLayout {
         }
     }
 
+    public void setTopIconDrawable(Drawable drawable) {
+        topIcon = drawable;
+        if (drawable != null) {
+            topIconView.setVisibility(VISIBLE);
+            topIconView.setImageDrawable(drawable);
+        } else {
+            topIconView.setVisibility(GONE);
+        }
+    }
+
+    public void setBottomIconDrawable(Drawable drawable) {
+        bottomIcon = drawable;
+        if (drawable != null) {
+            bottomIconView.setVisibility(VISIBLE);
+            bottomIconView.setImageDrawable(drawable);
+        } else {
+            bottomIconView.setVisibility(GONE);
+        }
+    }
+
+
     public void setRightIconDrawable(Drawable drawable) {
         rightIcon = drawable;
         if (drawable != null) {
@@ -90,6 +161,17 @@ public class FloatingTextButton extends FrameLayout {
         }
     }
 
+    public void setMinimumHeight(Integer dpHeight){
+        if(container != null && dpHeight != null && dpHeight != 0)
+            container.setMinimumHeight(dpHeight);
+    }
+
+    public void setMinimumWidth(Integer dpWidth){
+        if(container != null && dpWidth != null && dpWidth != 0)
+            container.setMinimumWidth(dpWidth);
+    }
+
+
     public Drawable getLeftIconDrawable() {
         return leftIcon;
     }
@@ -97,6 +179,11 @@ public class FloatingTextButton extends FrameLayout {
     public Drawable getRightIconDrawable() {
         return rightIcon;
     }
+
+    public Drawable getTopIconDrawable(){ return topIcon;}
+
+    public Drawable getBottomIconDrawable(){return bottomIcon;}
+
 
     @Override
     public void setOnClickListener(OnClickListener listener) {
@@ -122,6 +209,8 @@ public class FloatingTextButton extends FrameLayout {
 
         leftIconView = view.findViewById(R.id.layout_button_image_left);
         rightIconView = view.findViewById(R.id.layout_button_image_right);
+        topIconView = view.findViewById(R.id.layout_button_image_top);
+        bottomIconView = view.findViewById(R.id.layout_button_image_bottom);
 
         titleView = view.findViewById(R.id.layout_button_text);
     }
@@ -136,25 +225,36 @@ public class FloatingTextButton extends FrameLayout {
 
         title = styleable.getString(R.styleable.FloatingTextButton_floating_title);
         titleColor = styleable.getColor(R.styleable.FloatingTextButton_floating_title_color, Color.BLACK);
+        bottomIcon = styleable.getDrawable(R.styleable.FloatingTextButton_floating_bottom_icon);
+        topIcon = styleable.getDrawable(R.styleable.FloatingTextButton_floating_top_icon);
         leftIcon = styleable.getDrawable(R.styleable.FloatingTextButton_floating_left_icon);
         rightIcon = styleable.getDrawable(R.styleable.FloatingTextButton_floating_right_icon);
-        background = styleable.getColor(R.styleable.FloatingTextButton_floating_background_color, Color.WHITE);
+        backgroundColor = styleable.getColor(R.styleable.FloatingTextButton_floating_background_color, Color.WHITE);
 
+        selectedImageColor = styleable.getColor(R.styleable.FloatingTextButton_floating_selected_image_color, Color.WHITE);
+        selectedBackgroundColor = styleable.getColor(R.styleable.FloatingTextButton_floating_selected_background_color, Color.WHITE);
+        selectedTitleColor = styleable.getColor(R.styleable.FloatingTextButton_floating_selected_title_color, Color.BLACK);
+        minHeight =(int) styleable.getDimension(R.styleable.FloatingTextButton_floating_minHeight,0);
+        minWidth= (int) styleable.getDimension(R.styleable.FloatingTextButton_floating_minWidth,0);
         styleable.recycle();
     }
 
     private void initView() {
         setTitle(title);
         setTitleColor(titleColor);
+        setBottomIconDrawable(bottomIcon);
         setLeftIconDrawable(leftIcon);
         setRightIconDrawable(rightIcon);
-        setBackgroundColor(background);
+        setTopIconDrawable(topIcon);
+        setBackgroundColor(backgroundColor);
+        setMinimumHeight(minHeight);
+        setMinimumWidth(minWidth);
 
         container.setContentPadding(
-                getHorizontalPaddingValue(16),
-                getVerticalPaddingValue(8),
-                getHorizontalPaddingValue(16),
-                getVerticalPaddingValue(8)
+                getHorizontalPaddingValue(6),
+                getVerticalPaddingValue(6),
+                getHorizontalPaddingValue(6),
+                getVerticalPaddingValue(6)
         );
         initViewRadius();
     }
